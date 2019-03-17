@@ -68,6 +68,10 @@ class SemiGroup(object):
 
         # orden del semigrupo, es el numero de elements en el semigrupo
         self.order = len(self.elements)
+
+        # no se sabe si es asociativo o no
+        self.isAssociative = None
+
         # unidad del semigrupo en la inicializacion no se sabe si la inversa
         # existe, si no existe la variable cambia a None
         self._unit = False
@@ -229,7 +233,27 @@ class SemiGroup(object):
         return tableDictFormart
 
     def _check_associativity(self):
-        pass
+        """
+        Esta funcion retorna True si el semigrupo es asociativo, False en caso
+        contrario
+        """
+        if self.isAssociative is not None:
+            return self.isAssociative
+
+        # se asume que si es asociativo
+        self.isAssociative = True
+
+        # se debe hacer cada operacion para chequear que sea asociativa,
+        # entonces se debe recorrer cada elemento en (a_i * a_j) * a_k
+        elements = list(self.elements)
+        for i in range(self.order):
+            for j in range(self.order):
+                for k in range(self.order):
+                    if self.op(self.op(elements[i], elements[j]), elements[k]) != self.op(elements[i], self.op(elements[j], elements[k])):
+                        self.isAssociative = False
+                        return self.isAssociative
+
+        return self.isAssociative
 
     def op(self, x, y):
         """
