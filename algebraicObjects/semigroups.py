@@ -66,6 +66,12 @@ class SemiGroup(object):
             self.elements = elements
             self.multiplicationTable = multiplicationTable
 
+        # orden del semigrupo, es el numero de elements en el semigrupo
+        self.order = len(self.elements)
+        # unidad del semigrupo en la inicializacion no se sabe si la inversa
+        # existe, si no existe la variable cambia a None
+        self._unit = False
+
     def _check_map(self, elements, table):
         """
            Esta funcion chequea si table es una table de multiplicacion
@@ -106,28 +112,37 @@ class SemiGroup(object):
         # a_j, es decir, a_i * a_j debe tener un valor asociado
 
         # para cada elemento se va a crear un conjunto de elementos de la forma
-        # (a_j, value) el cual representa a_i * a_j = value
+        # (a_j, value) el cual representa a_i * a_j = value, cada conjunto
+        # debe tener el mismo numero de elementos que hay en el semigrupo
         counter = {}
         numberOfElements = len(elements)
         for (element, operating), value in table.items():
-            if not counter.get(element, 0):
-                counter[element] = set([(operating, value)])
-            else:
-                counter[element].add((operating, value))
+            # solo se agregan entradas al diccionario que lleva la cuenta si
+            # ambos elementos de la pareja (element, operating) estan en el
+            # semigrupo
+            if operating in elements and element in elements:
+                # si no hay una entrada para element, se crea
+                if not counter.get(element, 0):
+                    counter[element] = set([(operating, value)])
+                else:
+                    # se agrega el par (operating, value)
+                    counter[element].add((operating, value))
 
         # como cada elemento esta operado con los demas elementos del conjunto
         # incluyendose, entonces los conjuntos formados anteriormente tienen
         # exactamente numberOfElements elementos
         for element in elements:
+            # si no esta en el diccionario, entonces no se definieron valores
+            # para las parejas (element, a_j)
             if not counter.get(element, 0):
                 raise ElementsWithoutOperationError()
-            # si es menor es porque hubieron parejas no relacionadas
+            # si el numero de elementos con los que se relaciona element es
+            # menor que el numero de elementos es porque element no se
+            # relaciono con todos
             if len(counter[element]) < numberOfElements:
                 raise ElementsWithoutOperationError()
-            # si es mayor es porque un numero se relaciono mas de dos veces con
-            # algun otro elemento
-            if len(counter[element]) > numberOfElements:
-                raise MultivaluedOperation()
+
+        return True
 
     def __raises(self, subset, elements):
         """
@@ -207,6 +222,95 @@ class SemiGroup(object):
                 tableDictFormart[(table[i][0], table[0][j])] = table[i][j]
 
         return tableDictFormart
+
+    def _check_associativity(self):
+        """
+        Esta funcion chequea si el semigrupo es asociativo, un semigrupo es
+        asociativo si se cumple que (a * b) * c = a * (b * c) con a, b, c
+        elementos del semigrupo
+
+        Return
+        ------
+        out: True si el semigrupo es asociativo, False en caso contrario
+        """
+        # los set no tienen orden, para iterarlos en el mismo orden 2 veces se
+        # neceta una estructura de datos que mantenga el orden
+        elements = list(self.elements)
+
+        # se recorren todos los elementos
+        for i in range(self.order):
+            # se recorren los elementos para chequeaer que (a * b) = (b * a)
+            for j in range(i + 1, self.order):
+                if self.multiplicationTable[(elements[i], elements[j])] != \
+                   self.multiplicationTable[(elements[j], elements[i])]:
+                    return False
+
+        return True
+
+    def op(self, x, y):
+        """
+        Esta realiza la operacion entre los elementos x, y del semigrupo
+
+        Parametros
+        ----------
+        x: elemento con el que se quiere operar a izquierda
+        y: elemento con el que se quiere operar a derecha
+
+        Return
+        ------
+        out: resultado de la operacion x * y
+        """
+        return self.multiplicationTable[(x, y)]
+
+    def isin(self, x):
+        """
+        Esta funcion verifica si el elemento x esta en el semigrupo, retorna
+        True si x esta y False en caso contrario
+        """
+
+        return x in self.elements
+
+    def has_unit(self):
+        """
+        Esta funcion verifica si el semigrupo tiene unidad, en caso de que
+        tenga unidad la retorna, retorna False si no tiene unidad
+        """
+        # si la unidad existe, entonces es unica, suponga que existen 2,
+        # esto es, e1, e2 entonces se tiene que e1 = e1 * e2 = e2 -> e1 = e2
+
+        # si el semigrupo tiene unidad e, se cumple que e * e = e, entonces los
+        # posibles candidatos son todos los elementos a para los que a * a = a
+
+        # se recorren todos los elementos
+        for posibleIdentity in self.elements:
+            # si el elemento operado con sigo mismo da el mismo valor, entonces es un candidato
+            if self.multiplicationTable[(posibleIdentity, posibleIdentity)] == posibleIdentity:
+                # se mira que la posible identidad actue como tal en ambos
+                # lados para todos los elementos
+                for element in self.elements:
+                    if self.multiplicationTable[(posibleIdentity, element)] != element:
+                        break
+                    if self.multiplicationTable[(element, posibleIdentity)] != element:
+                        break
+                else:
+                    return posibleIdentity
+
+        return False
+
+    def unit(self):
+        """
+        Esta funcion retorna la unidad del semigrupo, si existe, en caso
+        contrario retorna None
+        """
+
+        if self._unit is False:
+            self._unit = None
+            unit = self.has_unit()
+
+            if unit is not False:
+                self._unit = unit
+
+        return self._unit
 
 
 def main():
