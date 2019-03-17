@@ -72,6 +72,11 @@ class SemiGroup(object):
         # existe, si no existe la variable cambia a None
         self._unit = False
 
+        # No se sabe si es conmutativo o no
+        self.isConmutative = None
+        # la cache para la funcion check_conmutativity
+        self.witnesses = None
+
     def _check_map(self, elements, table):
         """
            Esta funcion chequea si table es una table de multiplicacion
@@ -224,28 +229,7 @@ class SemiGroup(object):
         return tableDictFormart
 
     def _check_associativity(self):
-        """
-        Esta funcion chequea si el semigrupo es asociativo, un semigrupo es
-        asociativo si se cumple que (a * b) * c = a * (b * c) con a, b, c
-        elementos del semigrupo
-
-        Return
-        ------
-        out: True si el semigrupo es asociativo, False en caso contrario
-        """
-        # los set no tienen orden, para iterarlos en el mismo orden 2 veces se
-        # neceta una estructura de datos que mantenga el orden
-        elements = list(self.elements)
-
-        # se recorren todos los elementos
-        for i in range(self.order):
-            # se recorren los elementos para chequeaer que (a * b) = (b * a)
-            for j in range(i + 1, self.order):
-                if self.multiplicationTable[(elements[i], elements[j])] != \
-                   self.multiplicationTable[(elements[j], elements[i])]:
-                    return False
-
-        return True
+        pass
 
     def op(self, x, y):
         """
@@ -303,14 +287,59 @@ class SemiGroup(object):
         contrario retorna None
         """
 
+        # si no se ha inicializado la cache
         if self._unit is False:
-            self._unit = None
+            self._unit = None  # se asume que ho hay unidad
             unit = self.has_unit()
 
+            # si hay unidad se cambia el valor de self._unit
             if unit is not False:
                 self._unit = unit
 
         return self._unit
+
+    def check_commutativity(self, witnesses=False):
+        """
+        Esta funcion chequea si el semigrupo es conmutativo, un semigrupo es
+        conmutativo si se cumple que (a * b) * c = a * (b * c) con a, b, c
+        elementos del semigrupo
+
+        Return
+        ------
+        out: True si el semigrupo es conmutativo, False en caso contrario
+        """
+        # primero se verifica si los resultados estan en la cache
+        if self.isConmutative is not None:
+            if self.isConmutative is False:
+                return self.witnesses
+
+            return self.isConmutative
+
+        # en caso de que no se haya inicializado la cache aun se asume que es
+        # conmutativo
+        self.isConmutative = True
+        self.witnesses = {}
+
+        # los set no tienen orden, para iterarlos en el mismo orden 2 veces se
+        # neceta una estructura de datos que mantenga el orden
+        elements = list(self.elements)
+
+        # se recorren todos los elementos
+        for i in range(self.order):
+            # se recorren los elementos para chequeaer que (a * b) = (b * a)
+            for j in range(i + 1, self.order):
+                if self.multiplicationTable[(elements[i], elements[j])] != \
+                   self.multiplicationTable[(elements[j], elements[i])]:
+                    # cuando no son iguales entonces se guarda
+                    self.witnesses[(elements[i], elements[j])] = self.multiplicationTable[(elements[i], elements[j])]
+                    self.witnesses[(elements[j], elements[i])] = self.multiplicationTable[(elements[j], elements[i])]
+
+        # si self.witnesses tienen elementos entonces no es conmutativo
+        if self.witnesses:
+            self.isConmutative = False
+            return self.witnesses
+
+        return self.isConmutative
 
 
 def main():

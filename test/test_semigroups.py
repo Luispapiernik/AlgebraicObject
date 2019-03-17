@@ -128,40 +128,9 @@ class Test_SemiGroup(unittest.TestCase):
         # para diccionario es imposible que a un par de elementos se le asocien
         # dos o mas valores, entonces no se necesita testear ese caso
 
+    @unittest.skip('en construccion')
     def test_check_associativity(self):
-        # tabla asociativa
-        semigroup = SemiGroup('Z3', [0, 1, 2], [[0, 0, 1, 2],
-                                                [0, 0, 1, 2],
-                                                [1, 1, 2, 0],
-                                                [2, 2, 0, 1]])
-
-        self.assertTrue(semigroup._check_associativity())
-
-        # tabla no asociativa '2' * '1' = '0' pero '1' * '2' = '2'
-        semigroup = SemiGroup('Z3', '012', [['0', '0', '1', '2'],
-                                            ['0', '0', '1', '2'],
-                                            ['1', '1', '2', '2'],
-                                            ['2', '2', '0', '1']])
-
-        self.assertFalse(semigroup._check_associativity())
-
-        # tabla asociativa
-        semigroup = SemiGroup('Z3', '012',
-                              {('0', '0'): '0', ('0', '1'): '1',
-                               ('0', '2'): '2', ('1', '0'): '1',
-                               ('1', '1'): '2', ('1', '2'): '0',
-                               ('2', '0'): '2', ('2', '1'): '0',
-                               ('2', '2'): '1'}, DICT)
-
-        self.assertTrue(semigroup._check_associativity())
-
-        # tabla no asociativa 2 * 1 = 0 pero 1 * 2 = 2
-        semigroup = SemiGroup('Z3', [0, 1, 2],
-                              {(0, 0): 0, (0, 1): 1, (0, 2): 2,
-                               (1, 0): 1, (1, 1): 2, (1, 2): 2,
-                               (2, 0): 2, (2, 1): 0, (2, 2): 1}, DICT)
-
-        self.assertFalse(semigroup._check_associativity())
+        pass
 
     def test_op(self):
         semigroup = SemiGroup('Z3', [0, 1, 2], [[0, 0, 1, 2],
@@ -273,6 +242,47 @@ class Test_SemiGroup(unittest.TestCase):
 
         self.assertIsNone(semigroup.unit())
         self.assertIsNone(semigroup.unit())
+
+    def test_check_commutativity(self):
+        # tabla asociativa
+        semigroup = SemiGroup('Z3', [0, 1, 2], [[0, 0, 1, 2],
+                                                [0, 0, 1, 2],
+                                                [1, 1, 2, 0],
+                                                [2, 2, 0, 1]])
+
+        self.assertTrue(semigroup.check_commutativity())
+        self.assertTrue(semigroup.check_commutativity())
+
+        # tabla no asociativa '2' * '1' = '0' pero '1' * '2' = '2'
+        semigroup = SemiGroup('Z3', '012', [['0', '0', '1', '2'],
+                                            ['0', '0', '1', '2'],
+                                            ['1', '1', '2', '2'],
+                                            ['2', '2', '0', '1']])
+
+        self.assertEqual(semigroup.check_commutativity(),
+                         {('1', '2'): '2', ('2', '1'): '0'})
+        self.assertEqual(semigroup.check_commutativity(),
+                         {('1', '2'): '2', ('2', '1'): '0'})
+
+        # tabla asociativa
+        semigroup = SemiGroup('Z3', '012',
+                              {('0', '0'): '0', ('0', '1'): '1',
+                               ('0', '2'): '2', ('1', '0'): '1',
+                               ('1', '1'): '2', ('1', '2'): '0',
+                               ('2', '0'): '2', ('2', '1'): '0',
+                               ('2', '2'): '1'}, DICT)
+
+        self.assertTrue(semigroup.check_commutativity())
+        self.assertTrue(semigroup.check_commutativity())
+
+        # tabla no asociativa 2 * 1 = 0 pero 1 * 2 = 2
+        semigroup = SemiGroup('Z3', [0, 1, 2],
+                              {(0, 0): 0, (0, 1): 1, (0, 2): 2,
+                               (1, 0): 1, (1, 1): 2, (1, 2): 2,
+                               (2, 0): 2, (2, 1): 0, (2, 2): 1}, DICT)
+
+        self.assertEqual(semigroup.check_commutativity(),
+                         {(2, 1): 0, (1, 2): 2})
 
 
 def main():
