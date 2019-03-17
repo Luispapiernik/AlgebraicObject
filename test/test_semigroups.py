@@ -1,24 +1,34 @@
-from algebraicObjects.semigroups import SemiGroup, MATRIX, DICT
+from algebraicObjects.semigroups import SemiGroup
+from algebraicObjects.semigroups import OperationOutOfDomainError
+from algebraicObjects.semigroups import ElementsWithoutOperationError
 
 import unittest
 
 
 class Test_SemiGroup(unittest.TestCase):
-    def test_canInstanceSemiGroupMatrixFormat(self):
+    def test_check_table(self):
+        # tabla correcta
         semigroup = SemiGroup('Z3', [0, 1, 2], [[0, 0, 1, 2],
                                                 [0, 0, 1, 2],
-                                                [1, 1, 2, 3],
-                                                [2, 2, 3, 4]])
+                                                [1, 1, 2, 0],
+                                                [2, 2, 0, 1]])
 
-        self.assertEqual(semigroup.format, MATRIX)
-        self.assertIsInstance(semigroup, SemiGroup)
+        self.assertTrue(semigroup._check_table(semigroup.elements,
+                                               semigroup.multiplicationTable))
 
-    def test_canInstanceSemiGroupDictFormat(self):
-        semigroup = SemiGroup('Z3', [0, 1, 2], {(i, j): (
-            i + j) % 3 for i in range(3) for j in range(3)}, DICT)
+        # tabla con operaciones fuera del conjunto de elementos
+        self.assertRaises(OperationOutOfDomainError, SemiGroup, 'Z3',
+                          [0, 1, 2], [[0, 0, 1, 2],
+                                      [0, 0, 1, 2],
+                                      [1, 1, 2, 0],
+                                      [2, 2, 0, 4]])
 
-        self.assertEqual(semigroup.format, DICT)
-        self.assertIsInstance(semigroup, SemiGroup)
+        # tabla sin especificacion de operacion para pares de elementos
+        self.assertRaises(ElementsWithoutOperationError, SemiGroup, 'Z3',
+                          [0, 1, 2], [[0, 0, 1, 0],
+                                      [0, 0, 1, 0],
+                                      [1, 1, 2, 1],
+                                      [2, 2, 0, 2]])
 
 
 def main():
