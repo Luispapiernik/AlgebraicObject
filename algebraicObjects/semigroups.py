@@ -1,24 +1,46 @@
+from random import choice
+
+
+# constantes
 MATRIX = 0
 DICT = 1
+RIGHT = 2
+LEFT = 3
 
 
-class MAthError(Exception):
+class MathError(Exception):
     pass
 
 
-class OperationOutOfDomainError(MAthError):
+class OperationOutOfDomainError(MathError):
     def __init__(self):
         self.args = ('operation out of domain',)
 
 
-class ElementsWithoutOperationError(MAthError):
+class ElementsWithoutOperationError(MathError):
     def __init__(self):
         self.args = ('elements without operations',)
 
 
-class MultivaluedOperation(MAthError):
+class MultivaluedOperation(MathError):
     def __init__(self):
         self.args = ('multivalued operation',)
+
+
+class SemigroupWithoutUnit(MathError):
+    def __init__(self, arg):
+        self.args = (arg,)
+
+
+class ElementWithoutInverse(MathError):
+    """docstring for ElementWithoutInverse"""
+    def __init__(self, type=RIGHT):
+        if type == RIGHT:
+            arg = 'element without right inverse'
+        if type == LEFT:
+            arg = 'element without left inverse'
+
+        self.args = (arg,)
 
 
 class SemiGroup(object):
@@ -78,8 +100,19 @@ class SemiGroup(object):
 
         # No se sabe si es conmutativo o no
         self.isConmutative = None
-        # la cache para la funcion check_conmutativity
+        # la cache para la funcion check_conmutativity, no conmutativos
         self.witnesses = None
+
+        # cache para los inversos de un elemento x
+        # inversas a derecha
+        self._right_inverses = {element: None for element in elements}
+        # inversas a izquierda
+        self._left_inverses = {element: None for element in elements}
+        # inversa a derecha e izquierda
+        self._inverses = {element: None for element in elements}
+
+        # cache para los elementos que commutator
+        self._commutators = {element: None for element in elements}
 
     def _check_map(self, elements, table):
         """
@@ -334,7 +367,7 @@ class SemiGroup(object):
         """
         # primero se verifica si los resultados estan en la cache
         if self.isConmutative is not None:
-            if self.isConmutative is False:
+            if witnesses is True:
                 return self.witnesses
 
             return self.isConmutative
@@ -358,12 +391,204 @@ class SemiGroup(object):
                     self.witnesses[(elements[i], elements[j])] = self.multiplicationTable[(elements[i], elements[j])]
                     self.witnesses[(elements[j], elements[i])] = self.multiplicationTable[(elements[j], elements[i])]
 
+        # ----------------------------------------------------------------------
+        # probando algo nuevo
+        # for (elementA, elementB), valueC in self.multiplicationTable.items():
+        #     for (aElement, bElement), cValue in \
+        #             self.multiplicationTable.items():
+        #         if valueC != cValue:
+        #             self.witnesses[(elementA, elementB)] = valueC
+        #             self.witnesses[(aElement, bElement)] = cValue
+        # ----------------------------------------------------------------------
+
         # si self.witnesses tienen elementos entonces no es conmutativo
         if self.witnesses:
             self.isConmutative = False
             return self.witnesses
 
         return self.isConmutative
+
+    def __set_right_inverses(self, element):
+        """
+        Esta funcion genera todas las inversas a derecha de un elemento dado,
+        esta funcion no debe ser usado por otra funcion
+        """
+
+        # Se mira si ya esta guardado en cache
+        if self._right_inverses[element] is not None:
+            return
+
+        # se obtiene la unidad del semigrupo
+        unit = self.unit()
+
+        # si no hay una unidad se lanza una excepcion
+        if unit is None:
+            raise SemigroupWithoutUnit('''element without right inverse,
+                                          semigroup has no unit''')
+
+        # se inicializa la lista de inversas a derecha
+        self._right_inverses[element] = []
+
+        # se recorren todos los elementos a_i para verificar a * a_i = e
+        for posibleInverse in self.elements:
+            if self.multiplicationTable[(element, posibleInverse)] == unit:
+                self._right_inverses[element].append(posibleInverse)
+
+    def __set_left_inverses(self, element):
+        """
+        Esta funcion genera todas las inversas a izquierda de un elemento dado,
+        esta funcion no debe ser usado por otra funcion
+        """
+
+        # Se mira si ya esta guardado en cache
+        if self._left_inverses[element] is not None:
+            return
+
+        # se consigue la unidad del semigrupo
+        unit = self.unit()
+
+        # si no hay una unidad se lanza una excepcion
+        if unit is None:
+            raise SemigroupWithoutUnit('''element without left inverse,
+                                          semigroup has no unit''')
+
+        # se restablece el conjunto de inversas a derecha
+        self._left_inverses[element] = []
+
+        # se recorren todos los elementos a_i para verificar a_i * a = e
+        for posibleInverse in self.elements:
+            if self.multiplicationTable[(posibleInverse, element)] == unit:
+                self._left_inverses[element].append(posibleInverse)
+
+    def has_right_inverse(self, element):
+        """
+        Esta funcion retorna True si element tiene inversa a derecha, False
+        en el caso contrario
+        """
+        # se inicializa el conjunto de inversas a derecha de element
+        self.__set_right_inverses(element)
+        # la lista no sea None
+        hasInvert = self._right_inverses[element] is not None
+        # debe tener al menos un elemento
+        hasInvert = hasInvert and len(self._right_inverses[element]) > 0
+        return hasInvert
+
+    def right_inverse(self, element):
+        """
+        Esta funcion retorna la inversa a derecha de element(si tiene, en caso
+        contrario se levanta un error), si tiene muchas inversas a derecha, se
+        retornara una aleatoria
+        """
+        # se inicializa el conjunto de inversas a derecha de element
+        self.__set_right_inverses(element)
+
+        # si no tiene inversa a derecha se lanza una excepcion
+        if len(self._right_inverses[element]) == 0:
+            raise ElementWithoutInverse(RIGHT)
+
+        # se escoje una al azar
+        return choice(self._right_inverses[element])
+
+    def right_inverses(self, element):
+        """Esta funcion retorna todas las inversas de a derecha de element(si
+        tiene, en caso contrario se levanta un error)
+        """
+        # se inicializa el conjunto de inversas a derecha de element
+        self.__set_right_inverses(element)
+
+        # si no tiene inversa a derecha se lanza una excepcion
+        if len(self._right_inverses[element]) == 0:
+            raise ElementWithoutInverse(RIGHT)
+
+        # se etornan todas las inversas
+        return self._right_inverses[element]
+
+    def has_left_inverse(self, element):
+        """
+        Esta funcion retorna True si element tiene inversa a izquierda, False
+        en el caso contrario
+        """
+        # se inicializa el conjunto de inversas a izquierda de element
+        self.__set_left_inverses(element)
+        # la lista no sea None
+        hasInvert = self._left_inverses[element] is not None
+        # debe tener al menos un elemento
+        hasInvert = hasInvert and len(self._left_inverses[element]) > 0
+        return hasInvert
+
+    def left_inverse(self, element):
+        """
+        Esta funcion retorna la inversa a izquierda de element(si tiene, en
+        casocontrario se levanta un error), si tiene muchas inversas a
+        izquierda, se retornara una aleatoria
+        """
+        # se inicializa el conjunto de inversas a izquierda de element
+        self.__set_left_inverses(element)
+
+        # si no tiene inversa a izquierda se lanza una excepcion
+        if len(self._left_inverses[element]) == 0:
+            raise ElementWithoutInverse(LEFT)
+
+        # se escoje una al azar
+        return choice(self._left_inverses[element])
+
+    def left_inverses(self, element):
+        """
+        Esta funcion retorna todas las inversas a izquierda de element(si
+        tiene, en caso contrario se levanta un error)
+        """
+        # se inicializa el conjunto de inversas a derecha de element
+        self.__set_left_inverses(element)
+
+        # si no tiene inversa a derecha se lanza una excepcion
+        if len(self._left_inverses[element]) == 0:
+            raise ElementWithoutInverse(LEFT)
+
+        # se retornan todas las inversas
+        return self._left_inverses[element]
+
+    def has_inverse(self, element):
+        """
+        Esta funcion retorna True si element tiene inversa y False en caso
+        contrario
+        """
+        # si a tiene inversa a izquierda y a derecha, esto es, a * c = e y
+        # b * a = e, entonces se cumple que b = c, pues,
+        # b = b * e = b * a * c = e * c = c
+        return self.has_left_inverse(element) and self.has_right_inverse(element)
+
+    def inverse(self, element):
+        """
+        Esta funcion retorna la inversa de element, si la tiene, y False en el
+        caso contrario
+        """
+        if self.has_inverse(element):
+            return self._right_inverses[element][0]
+
+    def commutators(self, element):
+        """
+        Esta funcion retorna los elementos que comutan con element
+        """
+        # se mira primero en cache
+        if self._commutators[element] is not None:
+            return self._commutators[element]
+
+        # si el semigrupo es conmutativo entonces todos los elementos conmutan
+        # con todos
+        if self.check_commutativity():
+            self._commutators[element] = self.elements
+            return self.elements
+
+        # si no es conmutativo se necesita recorrer todos los elementos e ir
+        # chequeando
+        self._commutators[element] = []
+
+        for elem in self.elements:
+            # si conmutan se agrega a la lista
+            if self.op(element, elem) == self.op(elem, element):
+                self._commutators[element].append(elem)
+
+        return self._commutators[element]
 
 
 def main():
