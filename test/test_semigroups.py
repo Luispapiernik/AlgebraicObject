@@ -288,14 +288,14 @@ class Test_SemiGroup(unittest.TestCase):
         self.assertTrue(semigroup.check_commutativity())
         self.assertTrue(semigroup.check_commutativity())
 
-        # semigroup = SemiGroup('Z3', [0, 1, 2], [[0, 0, 1, 2],
-        #                                         [0, 0, 1, 0],
-        #                                         [1, 2, 1, 0],
-        #                                         [2, 2, 0, 1]])
+        semigroup = SemiGroup('Z3', [0, 1, 2], [[0, 0, 1, 2],
+                                                [0, 0, 1, 0],
+                                                [1, 2, 1, 0],
+                                                [2, 2, 0, 1]])
 
-        # self.assertFalse(semigroup.check_commutativity())
-        # self.assertEqual(semigroup.check_commutativity(True),
-        #                  {(0, 1): 1, (1, 0): 2})
+        self.assertFalse(semigroup.check_commutativity())
+        self.assertEqual(semigroup.check_commutativity(True),
+                         {(0, 1): 1, (1, 0): 2, (2, 0): 2, (0, 2): 0})
 
         # tabla no conmutativa '2' * '1' = '0' pero '1' * '2' = '2'
         semigroup = SemiGroup('Z3', '012', [['0', '0', '1', '2'],
@@ -450,7 +450,7 @@ class Test_SemiGroup(unittest.TestCase):
 
         self.assertFalse(semigroup.has_inverse(1))
 
-    @unittest.skip('En construccion')
+    # @unittest.skip('En construccion')
     def test_commutators(self):
         semigroup = SemiGroup('Z3', [0, 1, 2], [[0, 0, 1, 2],
                                                 [0, 0, 1, 2],
@@ -465,7 +465,7 @@ class Test_SemiGroup(unittest.TestCase):
                                                 [1, 2, 1, 0],
                                                 [2, 2, 0, 1]])
 
-        self.assertEqual(semigroup.commutators(1), set([1, 2]))
+        self.assertEqual(semigroup.commutators(1), [1, 2])
 
 
 def main():

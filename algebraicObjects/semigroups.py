@@ -367,6 +367,9 @@ class SemiGroup(object):
         """
         # primero se verifica si los resultados estan en la cache
         if self.isConmutative is not None:
+            if self.isConmutative:
+                return self.isConmutative
+
             if witnesses is True:
                 return self.witnesses
 
@@ -402,8 +405,10 @@ class SemiGroup(object):
         # ----------------------------------------------------------------------
 
         # si self.witnesses tienen elementos entonces no es conmutativo
-        if self.witnesses:
+        if self.witnesses != {}:
             self.isConmutative = False
+
+        if witnesses:
             return self.witnesses
 
         return self.isConmutative
@@ -589,6 +594,30 @@ class SemiGroup(object):
                 self._commutators[element].append(elem)
 
         return self._commutators[element]
+
+    def right_cancellable(self, element):
+        """
+        Esta funcion retorna True si element es cancelable a derecha, False en
+        caso contrario
+        """
+        # un elemento es cancelable a derecha si tiene inverso a derecha
+        return self.has_right_inverse(element)
+
+    def left_cancellable(self, element):
+        """
+        Esta funcion retorna True si element es cancelable a izquierda, False
+        en caso contrario
+        """
+        # un elemento es cancelable a izquierda si tiene inverso a derecha
+        return self.has_left_inverse(element)
+
+    def cancellable(self, element):
+        """
+        Esta funcion retorna True si element es invertible a derecha e
+        izquierda
+        """
+
+        return self.has_inverse(element)
 
 
 def main():
