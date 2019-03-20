@@ -211,7 +211,7 @@ class Test_SemiGroup(unittest.TestCase):
                                                 [1, 1, 2, 0],
                                                 [2, 2, 0, 1]])
 
-        self.assertEqual(semigroup.has_unit(), 0)
+        self.assertTrue(semigroup.has_unit())
 
         semigroup = SemiGroup('Z3', '012',
                               {('0', '0'): '0', ('0', '1'): '1',
@@ -220,7 +220,7 @@ class Test_SemiGroup(unittest.TestCase):
                                ('2', '0'): '2', ('2', '1'): '0',
                                ('2', '2'): '1'}, DICT)
 
-        self.assertEqual(semigroup.has_unit(), '0')
+        self.assertTrue(semigroup.has_unit())
 
         semigroup = SemiGroup('Z3', [0, 1, 2], [[0, 0, 1, 2],
                                                 [0, 0, 1, 1],
@@ -236,6 +236,14 @@ class Test_SemiGroup(unittest.TestCase):
                                ('2', '0'): '2', ('2', '1'): '0',
                                ('2', '2'): '1'}, DICT)
 
+        self.assertFalse(semigroup.has_unit())
+
+        semigroup = SemiGroup('Z3', [0, 1, 2], [[0, 0, 1, 2],
+                                                [0, 1, 1, 2],
+                                                [1, 1, 2, 0],
+                                                [2, 2, 0, 1]])
+
+        print(semigroup.unit())
         self.assertFalse(semigroup.has_unit())
 
     def test_unit(self):
