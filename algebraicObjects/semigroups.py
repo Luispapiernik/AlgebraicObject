@@ -1,15 +1,6 @@
+from algebraicObjects import MATRIX, DICT, RIGHT, LEFT
+from algebraicObjects import MathError
 from random import choice
-
-
-# constantes
-MATRIX = 0
-DICT = 1
-RIGHT = 2
-LEFT = 3
-
-
-class MathError(Exception):
-    pass
 
 
 class OperationOutOfDomainError(MathError):
@@ -319,6 +310,15 @@ class SemiGroup(object):
         # si la unidad existe, entonces es unica, suponga que existen 2,
         # esto es, e1, e2 entonces se tiene que e1 = e1 * e2 = e2 -> e1 = e2
 
+        # se busca en la cache
+        if self._unit is not False:  # si ya se inicializo
+            if self._unit is None:
+                return False
+            return True
+
+        # se inicializa la cache
+        self._unit = None
+
         # si el semigrupo tiene unidad e, se cumple que e * e = e, entonces los
         # posibles candidatos son todos los elementos a para los que a * a = a
 
@@ -334,6 +334,8 @@ class SemiGroup(object):
                     if self.multiplicationTable[(element, posibleIdentity)] != element:
                         break
                 else:
+                # si hay inversa se cambia el valor de la cache
+                    self._unit = posibleIdentity
                     return posibleIdentity
 
         return False
@@ -346,12 +348,7 @@ class SemiGroup(object):
 
         # si no se ha inicializado la cache
         if self._unit is False:
-            self._unit = None  # se asume que ho hay unidad
-            unit = self.has_unit()
-
-            # si hay unidad se cambia el valor de self._unit
-            if unit is not False:
-                self._unit = unit
+            self.has_unit()
 
         return self._unit
 
