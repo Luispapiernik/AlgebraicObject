@@ -305,7 +305,7 @@ class SemiGroup(object):
     def has_unit(self):
         """
         Esta funcion verifica si el semigrupo tiene unidad, en caso de que
-        tenga unidad la retorna, retorna False si no tiene unidad
+        tenga unidad retorna True, retorna False si no tiene unidad
         """
         # si la unidad existe, entonces es unica, suponga que existen 2,
         # esto es, e1, e2 entonces se tiene que e1 = e1 * e2 = e2 -> e1 = e2
@@ -334,9 +334,9 @@ class SemiGroup(object):
                     if self.multiplicationTable[(element, posibleIdentity)] != element:
                         break
                 else:
-                # si hay inversa se cambia el valor de la cache
+                    # si hay inversa se cambia el valor de la cache
                     self._unit = posibleIdentity
-                    return posibleIdentity
+                    return True
 
         return False
 
